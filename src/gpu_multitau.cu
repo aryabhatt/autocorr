@@ -1,4 +1,5 @@
 #include <cuda_runtime.h>
+#include <iostream>
 
 const unsigned THREADS_PER_BLOCK = 256;
 
@@ -6,7 +7,7 @@ __constant__ unsigned nrows;
 __constant__ unsigned ncols; __constant__ unsigned ntaus;
 __constant__ unsigned g2len;
 
-void __global__ _reduce_inplace(unsigned newlen, double * signal) {
+void __global__ _reduce(unsigned newlen, double * signal) {
     unsigned i = blockDim.x * blockIdx.x + threadIdx.x;
     unsigned j = blockDim.y * blockIdx.y + threadIdx.y;
     unsigned row_id = i * ncols;  
@@ -50,7 +51,7 @@ void __global__ _level1(unsigned ntimes,  double * signal, double * g2, unsigned
 }
 
 size_t gpuMultiTau(double * signal, unsigned rows, unsigned cols, unsigned tpl,
-        double * g2, double * log2t) {
+        double * & g2, double * & log2t) {
 
     // lambda expersion for making number even
     auto even = [](unsigned v){ 
@@ -107,7 +108,7 @@ size_t gpuMultiTau(double * signal, unsigned rows, unsigned cols, unsigned tpl,
     _level0 <<< blck1, thrd1 >>> (ntimes, d_sig, d_g2);
 
     ntimes = even(ntimes/2);
-    _reduce_inplace <<< b2, t2 >>> (ntimes, d_sig);
+    _reduce <<< b2, t2 >>> (ntimes, d_sig);
 
     // turn the crank
     while (ntimes >= tpl ) {
@@ -125,6 +126,8 @@ size_t gpuMultiTau(double * signal, unsigned rows, unsigned cols, unsigned tpl,
 
 	// copy results back to host
 	cudaMemcpy(g2, d_g2, sizeof(double) * rows * length, cudaMemcpyDeviceToHost);
+    for (auto i = 0; i < length; i++) std::cout << g2[i] << " ";
+    std::cout << std::endl;
 
 	// free memory
 	cudaFree(d_g2);

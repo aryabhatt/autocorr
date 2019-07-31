@@ -8,7 +8,7 @@
 namespace py = pybind11;
 
 #ifdef HAVE_CUDA
-extern size_t gpuMultiTau(double *, unsigned, unsigned, unsigned, double *, double *);
+extern size_t gpuMultiTau(double *, unsigned, unsigned, unsigned, double *&, double *&);
 #endif // HAVE_CUDA
 
 
@@ -41,11 +41,10 @@ py::tuple autocorrelate(py::array_t<double, py::array::c_style | py::array::forc
         /* get sizes of from the correlator objest */
         size_t len = corr.length();
 #endif
+		/* allocate the buffers for result */
         std::vector<ssize_t> shape;
         shape.push_back(nrow);
         shape.push_back(len);
-        
-		/* allocate the buffers for result */
 		auto G2  = py::array_t<double>(shape);
 		auto Tau = py::array_t<double>(len);
 
@@ -55,6 +54,7 @@ py::tuple autocorrelate(py::array_t<double, py::array::c_style | py::array::forc
 
         /* copy data */
 #if HAVE_CUDA
+        std::cout << std::endl;
         std::memcpy(g2, gpu_g2, sizeof(double) * len * nrow);
         std::memcpy(tau, gpu_tau, sizeof(double) * len);
         delete [] gpu_g2;

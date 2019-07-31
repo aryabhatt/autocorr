@@ -13,6 +13,10 @@ class MultiTauAutocorrelator {
         double * g2s_;
         double * tau_; 
         
+        /* work horses */
+        void reduceInplace();
+        void run_level(unsigned);
+
     public:
         MultiTauAutocorrelator(double *, unsigned, unsigned);
         ~MultiTauAutocorrelator();
@@ -25,11 +29,8 @@ class MultiTauAutocorrelator {
         size_t length() const { return len_; }
         double * g2()  { return g2s_; }
         double * tau() { return tau_; }
-
-        /* work horses */
-        void reduceInplace();
-        void run_level(unsigned);
         void process(unsigned m=16, double dt=1);
+
 };
 
 #endif // MULTI_TAU_CORRELATOR__H
